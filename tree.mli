@@ -52,7 +52,7 @@ and stmt_guts =
   | IfStmt of expr * stmt * stmt
   | WhileStmt of expr * stmt
   | RepeatStmt of stmt * expr
-  | ForStmt of expr * expr * expr * stmt * def option ref
+  | ForStmt of expr * expr list * expr list * expr list * expr list * stmt
   | CaseStmt of expr * (expr * stmt) list * stmt
 
 and expr = 

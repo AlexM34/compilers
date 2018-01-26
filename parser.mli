@@ -45,6 +45,7 @@ type token =
   | FOR
   | ELSIF
   | CASE
+  | STEP
 
 val program :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Tree.program

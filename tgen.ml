@@ -248,6 +248,8 @@ let gen_jtable sel table0 deflab =
     <JCASE (tab lobound table, deflab),
       <BINOP Minus, sel, <CONST lobound>>>
   end
+  
+let rec gen_indices x y = if x == y then [] else x :: gen_indices (x+1) y
 
 (* |gen_stmt| -- generate code for a statement *)
 let rec gen_stmt s = 
@@ -304,20 +306,29 @@ let rec gen_stmt s =
             gen_cond test l2 l1,
             <LABEL l2>>
 
-      | ForStmt (var, lo, hi, body, upb) ->
-          (* Use previously allocated temp variable to store upper bound.
-             We could avoid this if the upper bound is constant. *)
-          let tmp = match !upb with Some d -> d | _ -> failwith "for" in
-          let l1 = label () and l2 = label () in
-          <SEQ,
-            <STOREW, gen_expr lo, gen_addr var>,
-            <STOREW, gen_expr hi, address tmp>,
-            <LABEL l1>,
-            <JUMPC (Gt, l2), gen_expr var, <LOADW, address tmp>>,
-            gen_stmt body,
-            <STOREW, <BINOP Plus, gen_expr var, <CONST 1>>, gen_addr var>,
-            <JUMP l1>,
-            <LABEL l2>>
+      | ForStmt (var, lo, hi, step, bool_st, body) ->
+          let indices = gen_indices 0 (List.length lo)  in          
+          let code (current, start, while_elem, neg_step, zero_step, loop_body, donelab) = <SEQ,
+            <LABEL while_elem>,         
+            <STOREW, gen_expr (List.nth lo current), gen_addr var>,
+            <LABEL start>,
+            <JUMPC (Neq, zero_step), gen_expr (List.nth bool_st current), <CONST 2>>,
+            <JUMPC (Leq, neg_step), gen_expr (List.nth step current), <CONST 0>>,
+            <JUMPC (Gt, donelab), gen_expr var, gen_expr (List.nth hi current)>,
+            <JUMP loop_body>,
+            <LABEL neg_step>,
+            <JUMPC (Lt, donelab), gen_expr var, gen_expr (List.nth hi current)>,
+            <JUMP loop_body>,
+            <LABEL zero_step>,
+            <JUMPC (Eq, donelab), gen_expr (List.nth bool_st current), <CONST 0>>,
+            <LABEL loop_body>,
+            gen_stmt body,            
+            <JUMPC (Neq, while_elem), gen_expr (List.nth bool_st current), <CONST 2>>,
+            <STOREW, <BINOP Plus, gen_expr var, gen_expr (List.nth step current)>, gen_addr var>,
+            <JUMP start>,
+            <LABEL donelab>> in
+            
+            <SEQ, @(List.map (fun current -> let start = label () and while_elem = label () and neg_step = label () and zero_step = label () and loop_body = label () and donelab = label () in code (current, start, while_elem, neg_step, zero_step, loop_body, donelab)) indices)>
 
       | CaseStmt (sel, arms, deflt) ->
           (* Use one jump table, and hope it is reasonably compact *)

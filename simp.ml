@@ -68,12 +68,16 @@ let rec simp t =
             <BINOP Lsl, t1, <CONST k>>
           with Not_found -> t)
     | <BINOP Plus, t1, <CONST 0>> -> t1
-    | <BINOP Minus, t1, <CONST 0>> -> t1
+    | <BINOP Minus, t1, <CONST 0>> -> t1    
+
+    | <JUMPC (w, lab), <CONST a>, <CONST b>> ->
+    	if do_binop w a b == 1 then <JUMP lab> else <NOP>
 
     (* Swap operands to put constant on right *)
     | <BINOP w, <CONST a>, t2> ->
         if is_const t2 || not (Util.can swap w) then t else
           simp <BINOP (swap w), t2, <CONST a>>
+    	
     | <JUMPC (w, lab), <CONST a>, t2> ->
         if is_const t2 then t else
           simp <JUMPC (swap w, lab), t2, <CONST a>>

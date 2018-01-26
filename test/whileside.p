@@ -1,3 +1,24 @@
+(* While loop with side effect *)
+
+var k, x: integer;
+begin
+  k := 1;
+  x := 5;
+  for k := k + x while k < 4 * x do
+  	x := x + 3; print_num(k); newline()
+  end
+end.
+
+(*<<
+6
+14
+25
+39
+56
+76
+>>*)
+
+(*[[
 @ picoPascal compiler output
 	.include "fixup.s"
 	.global pmain
@@ -77,3 +98,4 @@ pmain:
 	.comm _k, 4, 4
 	.comm _x, 4, 4
 @ End
+]]*)

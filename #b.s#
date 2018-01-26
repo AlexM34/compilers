@@ -1,0 +1,151 @@
+@ picoPascal compiler output
+	.include "fixup.s"
+	.global pmain
+
+	.text
+pmain:
+	mov ip, sp
+	stmfd sp!, {r4-r10, fp, ip, lr}
+	mov fp, sp
+	sub sp, sp, #8
+@   for k := 1, 2, 3, 5, 10 step 10 until 100, 2 * k while k < 1000 do
+	mov r0, #0
+	str r0, [fp, #-4]
+.L9:
+	mov r0, #1
+	set r1, _k
+	str r0, [r1]
+.L8:
+	mov r4, #1
+	mov r5, #1
+	mov r6, #2
+	b .L2
+.L7:
+	mov r5, #1
+	b .L3
+.L12:
+	mov r0, #2
+	set r1, _k
+	str r0, [r1]
+.L11:
+	mov r4, #2
+	mov r5, #1
+	mov r6, #2
+	b .L2
+.L10:
+	mov r5, #1
+	b .L3
+.L15:
+	mov r0, #3
+	set r1, _k
+	str r0, [r1]
+.L14:
+	mov r4, #3
+	mov r5, #1
+	mov r6, #2
+	b .L2
+.L13:
+	mov r5, #1
+	b .L3
+.L18:
+	mov r0, #5
+	set r1, _k
+	str r0, [r1]
+.L17:
+	mov r4, #5
+	mov r5, #1
+	mov r6, #2
+	b .L2
+.L16:
+	mov r5, #1
+	b .L3
+.L21:
+	mov r0, #10
+	set r1, _k
+	str r0, [r1]
+.L20:
+	mov r4, #100
+	mov r5, #10
+	mov r6, #2
+	b .L2
+.L19:
+	mov r5, #10
+	b .L3
+.L24:
+	set r7, _k
+	ldr r0, [r7]
+	lsl r0, r0, #1
+	str r0, [r7]
+.L23:
+	set r0, _k
+	ldr r7, [r0]
+	lsl r4, r7, #1
+	mov r5, #0
+	cmp r7, #1000
+	mov r6, #0
+	movlt r6, #1
+	b .L2
+.L22:
+	mov r5, #0
+	b .L3
+.L2:
+	set r0, _k
+	ldr r7, [r0]
+	sub r0, r7, r4
+	mul r0, r0, r5
+	cmp r0, #0
+	bgt .L4
+	cmp r6, #0
+	beq .L4
+@   	print_num(k); newline()
+	mov r0, r7
+	bl print_num
+	bl newline
+	cmp r6, #2
+	bne .L5
+	ldr r0, [fp, #-4]
+	cmp r0, #6
+	ldrlo pc, [pc, r0, LSL #2]
+	b .L1
+	.word .L7
+	.word .L10
+	.word .L13
+	.word .L16
+	.word .L19
+	.word .L22
+.L3:
+	set r7, _k
+	ldr r0, [r7]
+	add r0, r0, r5
+	str r0, [r7]
+	ldr r0, [fp, #-4]
+	cmp r0, #6
+	ldrlo pc, [pc, r0, LSL #2]
+	b .L1
+	.word .L8
+	.word .L11
+	.word .L14
+	.word .L17
+	.word .L20
+	.word .L23
+.L4:
+	ldr r0, [fp, #-4]
+	add r0, r0, #1
+	str r0, [fp, #-4]
+.L5:
+	ldr r0, [fp, #-4]
+	cmp r0, #6
+	ldrlo pc, [pc, r0, LSL #2]
+	b .L1
+	.word .L9
+	.word .L12
+	.word .L15
+	.word .L18
+	.word .L21
+	.word .L24
+.L1:
+	ldmfd fp, {r4-r10, fp, sp, pc}
+	.ltorg
+
+	.comm _k, 4, 4
+@ End

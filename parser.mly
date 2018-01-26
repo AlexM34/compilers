@@ -22,7 +22,7 @@ open Tree
 %token                  ARRAY BEGIN CONST DO ELSE END IF OF
 %token                  PROC RECORD RETURN THEN TO TYPE
 %token                  VAR WHILE NOT POINTER NIL
-%token                  REPEAT UNTIL FOR ELSIF CASE
+%token                  REPEAT UNTIL FOR ELSIF CASE STEP
 
 %type <Tree.program>    program
 %start                  program
@@ -117,15 +117,32 @@ stmt1 :
   | IF expr THEN stmts elses END        { IfStmt ($2, $4, $5) }
   | WHILE expr DO stmts END             { WhileStmt ($2, $4) } 
   | REPEAT stmts UNTIL expr             { RepeatStmt ($2, $4) }
-  | FOR name ASSIGN expr TO expr DO stmts END 
-                                        { let v = makeExpr (Variable $2) in
-                                          ForStmt (v, $4, $6, $8, ref None) } 
+  | for_clause stmts END 
+                                        { let v = makeExpr (Variable (fst ($1))) in
+                                          let lo = List.map (fun (l, h, s, b) -> l) (snd ($1)) in
+                                          let hi = List.map (fun (l, h, s, b) -> h) (snd ($1)) in
+                                          let step = List.map (fun (l, h, s, b) -> s) (snd ($1)) in
+                                          let bool_st = List.map (fun (l, h, s, b) -> b) (snd ($1)) in
+                                          ForStmt (v, lo, hi, step, bool_st, $2) } 
   | CASE expr OF arms else_part END     { CaseStmt ($2, $4, $5) } ;
 
 elses :
     /* empty */                         { makeStmt (Skip, 0) }
   | ELSE stmts                          { $2 }
   | ELSIF line expr THEN stmts elses    { makeStmt (IfStmt ($3, $5, $6), $2) } ;
+ 
+for_clause :
+    FOR name ASSIGN for_elems DO	{ $2, $4 } ;
+  
+for_elems :
+    for_elem				{ [$1] }
+  | for_elem COMMA for_elems		{ $1 :: $3 } ;
+  
+for_elem :
+    expr TO expr			{ $1, $3, const 1 integer, const 2 boolean }
+  | expr STEP expr UNTIL expr		{ $1, $5, $3, const 2 boolean }
+  | expr WHILE expr			{ $1, const 0 integer, const 0 integer, $3 }
+  | expr				{ $1, $1, const 1 integer, const 2 boolean } ;
 
 arms :
     arm                                 { [$1] }

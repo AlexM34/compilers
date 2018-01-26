@@ -348,20 +348,20 @@ let rec check_stmt s env alloc =
         if not (same_type ct boolean) then
           sem_error "type mismatch in repeat statement" []
 
-    | ForStmt (var, lo, hi, body, upb) ->
+    | ForStmt (var, lo, hi, step, bool_st, body) ->
         let vt = check_expr var env in
-        let lot = check_expr lo env in
-        let hit = check_expr hi env in
-        if not (same_type vt integer) || not (same_type lot integer)
-            || not (same_type hit integer) then
-          sem_error "type mismatch in for statement" [];
+        let lot = List.map (fun x -> check_expr x env) lo in
+        let hit = List.map (fun x -> check_expr x env) hi in
+        let stept = List.map (fun x -> check_expr x env) step in
+        let bool_stt = List.map (fun x -> check_expr x env) bool_st in
+        if not (same_type vt integer) then sem_error "type mismatch in for statement var" [];
+        List.iter (fun a -> if not (same_type a integer) then sem_error "type mismatch in for statement lo" []) lot;
+        List.iter (fun a -> if not (same_type a integer) then sem_error "type mismatch in for statement hi" []) hit;
+        List.iter (fun a -> if not (same_type a integer) then sem_error "type mismatch in for statement step" []) stept;
+        List.iter (fun a -> if not (same_type a boolean) then sem_error "type mismatch in for statement bool_st" []) bool_stt;
+			 
         check_var var false;
-        check_stmt body env alloc;
-
-        (* Allocate space for hidden variable.  In the code, this will
-           be used to save the upper bound.  *)
-        let d = make_def (intern "*upb*") VarDef integer in
-        alloc d; upb := Some d
+        check_stmt body env alloc
 
     | CaseStmt (sel, arms, deflt) ->
         let st = check_expr sel env in
